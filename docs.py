@@ -10,10 +10,13 @@ TEMPLATE = '''
 **Method**: `{{request_method}}`
 
 
+# Description
+
+{{description}}
+
+
 # Request
 
-|     Parameter       |      Type       |   Required   |
-|---------------------|:---------------:|--------------|
 {{request_params}}
 
 
@@ -21,13 +24,14 @@ TEMPLATE = '''
 
 {{response_params}}
 
+
 ## Example
 
-````
+```JSON
 {{request_type}} {{url}}
 
 {{example_request}}
-````
+```
 '''
 
 class TemplateHelper:
@@ -50,7 +54,7 @@ class TemplateHelper:
                 elif isinstance(value, unicode):
                     cls.out.append(key)
 
-        return cls.out
+        return set(cls.out)
 
     @classmethod
     def update_header(cls, api_path, request_method):
@@ -58,8 +62,16 @@ class TemplateHelper:
             cls.doc_template = str(cls.doc_template).replace('{{' + str(arg) + '}}', str(value))
 
     @classmethod
+    def update_description(cls, description):
+        if description:
+            cls.doc_template = str(cls.doc_template).replace('{{description}}', description)
+        cls.doc_template = str(cls.doc_template).replace('{{description}}', 'Please add some description.')
+
+    @classmethod
     def update_request(cls, method_type, url, raw_data):
-        request_temp_line = '| {{param}}            | `string`        | Yes          |'
+        header_lines = ['|     Parameter       |      Type       |   Required   |',
+                         '|---------------------|:---------------:|--------------|']
+
         params = None
         get_params = ''
         
@@ -73,21 +85,25 @@ class TemplateHelper:
                 cls.out = []
 
         if params:
-            request_params = '\n'.join([request_temp_line.replace('{{param}}', param) for param in params])
+            request_params = '\n'.join(header_lines) + '\n' + '\n'.join(['|{:^21}|{:^17}|{:^14}|'.format(param,'`string`','Yes') for param in params])
             cls.doc_template = str(cls.doc_template).replace('{{request_params}}', request_params)
+        else:
+            cls.doc_template = str(cls.doc_template).replace('{{request_params}}', 'void.Message')
 
     @classmethod
     def update_response(cls, response):
         header_lines = ['|     Parameter       |      Type       |   Required   |',
                          '|---------------------|:---------------:|--------------|']
-        response_temp_line = '| {{param}}            | `string`        | Yes          |'
+        #response_temp_line = '| {{param}}            | `string`        | Yes          |'
         if response:
             if response['text']:
                 params =  cls.extract_keys(json.loads(response['text']))
                 cls.out = []
                 if params:
-                    res_params = '\n'.join(header_lines) + '\n' + '\n'.join([response_temp_line.replace('{{param}}', param) for param in params])
+                    res_params = '\n'.join(header_lines) + '\n' + '\n'.join(['|{:^21}|{:^17}|{:^14}|'.format(param,'`string`','Yes') for param in params])
                     cls.doc_template =  str(cls.doc_template).replace('{{response_params}}', res_params)
+                else:
+                    cls.doc_template =  str(cls.doc_template).replace('{{response_params}}', 'void.Message')
 
     @classmethod
     def update_example(cls, method_type, url, raw_data, response=None):
@@ -160,6 +176,7 @@ def main():
             folder_name = folders_dict.get(folder_id, None)
 
         url = request['url']
+        description = request['description']
         req_method = request['method']
         raw_data = request.get('rawModeData', None)
 
@@ -177,11 +194,13 @@ def main():
         if not folder_name:
             folder_name = folder_names[0]
 
-        file_name = '_'.join(api_path.split('/')) + '.md'
+       
+        file_name = re.sub(r'_\.', '.', '_'.join(api_path.split('/')) + '.md')
 
         # Modify the template
         TemplateHelper.update_header(api_path, req_method)
         TemplateHelper.update_request(req_method, url, raw_data)
+        TemplateHelper.update_description(description)
         responses = request.get('responses', None)
 
         if responses:
