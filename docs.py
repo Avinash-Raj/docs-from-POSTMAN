@@ -115,7 +115,12 @@ class TemplateHelper:
         if response:
             data = response['text']
             if raw_data:
-                data = '**Request:**\n{}\n**Response**\n{}'.format(raw_data, data)
+                raw_data = json.dumps(json.loads(raw_data), indent=4)
+
+            data_json = json.dumps(json.loads(data), indent=4)
+
+            data = '**Request:**\n{}\n**Response**\n{}'.format(raw_data, data_json)
+
             cls.doc_template = str(cls.doc_template).replace('{{example_request}}', data)
 
     @classmethod
