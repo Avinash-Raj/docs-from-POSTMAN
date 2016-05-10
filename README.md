@@ -9,5 +9,8 @@ Python script which generates docs from POSTMAN collection url
 ````Python
 python docs.py postman_collection_url
 ````
+### Example:
 
-
+````Python
+python docs.py https://www.getpostman.com/collections/7c7e9e7bd7b0474ef082
+````
