@@ -54,7 +54,6 @@ class TemplateHelper:
 
     @classmethod
     def update_header(cls, api_path, request_method):
-        api_path = re.search(r'/api/default/v1/([^?]+)', api_path).group(1)
         for arg, value in locals().items():
             cls.doc_template = str(cls.doc_template).replace('{{' + str(arg) + '}}', str(value))
 
@@ -148,8 +147,12 @@ def main():
     else:
         folder_names = [base_dir]
 
-    #iterate over the requests
+    # Get the common api path
     json_requests = data['requests']
+    urls = [i['url'] for i in json_requests]
+    base_api_path = re.search(r'^([^,]+)\b[^,]+,\1[^,]+,\1+', ','.join(urls)).group(1)
+
+    #iterate over the requests
     for request in json_requests:
         folder_id = request.get('folder', None)
         folder_name = None
@@ -159,19 +162,25 @@ def main():
         url = request['url']
         req_method = request['method']
         raw_data = request.get('rawModeData', None)
-        folder_na, api_path = re.search(r'/api/default/v1/'+'(\w+)/' + '([^?]+)', url).groups()
-        if not folder_name:
-            for j in folder_names:
-                if folder_na[0].upper() + folder_na[1:] in j:
-                    folder_name = j
-                    break
+
+        folder_na = None
+        api_path = re.search(base_api_path + '([^?]+)', url).group(1)
+        if folders:
+            folder_na, api_path = re.search(base_api_path +r'(\w+)/' + '([^?]+)', url).groups()
+
+        if folder_na:
+	        if not folder_name:
+	            for j in folder_names:
+	                if folder_na[0].upper() + folder_na[1:] in j:
+	                    folder_name = j
+	                    break
         if not folder_name:
             folder_name = folder_names[0]
 
         file_name = '_'.join(api_path.split('/')) + '.md'
 
         # Modify the template
-        TemplateHelper.update_header(url, req_method)
+        TemplateHelper.update_header(api_path, req_method)
         TemplateHelper.update_request(req_method, url, raw_data)
         responses = request.get('responses', None)
 
