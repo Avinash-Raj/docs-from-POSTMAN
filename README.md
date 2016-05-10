@@ -19,3 +19,6 @@ python docs.py postman_collection_url
 python docs.py https://www.getpostman.com/collections/9b3bf6b5d5ff087bdb1d
 ````
 
+### Screenshot:
+
+![Generated doc](http://i.stack.imgur.com/fqwu3.png)
