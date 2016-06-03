@@ -171,7 +171,7 @@ def main():
     # Get the common api path
     json_requests = data['requests']
     urls = [i['url'] for i in json_requests]
-    base_api_path = re.search(r'^([^,]+)\b[^,]+,\1[^,]+,\1+', ','.join(urls)).group(1)
+    base_api_path = re.search(r'^([^,]+)[^,]*(?:,\1[^,]*)*$', ','.join(urls)).group(1)
 
     #iterate over the requests
     for request in json_requests:
